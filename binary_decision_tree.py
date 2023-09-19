@@ -18,7 +18,6 @@ class Node():
 class Leaf():
     def __init__(self,val):
         self.val = val
-        pass
 
 
 def calculate_data_entropy(y):
@@ -39,7 +38,10 @@ def calculate_conditional_entropy(X,y):
             prob_X = X_split.value_counts()[value]/len(X_split)
             column = y.keys()[-1]
             for label in y[column].unique():
-                prob_y_cond = (((X_split == value)&(y[column] == label)).value_counts()[True]/len(X_split))/prob_X
+                try:
+                    prob_y_cond = (((X_split == value)&(y[column] == label)).value_counts()[True]/len(X_split))/prob_X
+                except:
+                    prob_y_cond = 0
                 cond_entropy -= prob_X * prob_y_cond * np.log2(prob_y_cond)
         entropy_list.append(cond_entropy)
     entropy_list = np.array(entropy_list)
@@ -52,7 +54,6 @@ def information_gain(X,y):
     cond_entropy_array = calculate_conditional_entropy(X,y)
     #difference in data set entropy and conditional entropies gives us information gain of each split
     information_gain = data_entropy - cond_entropy_array
-    print(information_gain)
     return np.argmax(information_gain)
 
 
@@ -60,7 +61,7 @@ def learn(X,y,impurity_measure = 'entropy'):
     #check if all labels are the same; return leaf of that value if they are
     column = y.keys()[-1]
     if len(y[column].unique()) == 1:
-        return Leaf(y[column][0])
+        return Leaf(y[column].iloc[0])
     #check if all data values are the same and return most common label if true
     data_is_equal = True
     for key in X.keys():
@@ -77,16 +78,21 @@ def learn(X,y,impurity_measure = 'entropy'):
         split_key = X.keys()[split_index]
         split_value = np.mean(X[split_key])
         branch = Node(split_key,split_value)
-        branch.right = learn(X[X[split_key] < split_index].reset_index(),y[X[split_key] < split_index].reset_index())
-        branch.left = learn(X[X[split_key] >= split_index].reset_index(),y[X[split_key] >= split_index].reset_index())
+        branch.right = learn(X[X[split_key] < split_value],y[X[split_key] < split_value])
+        branch.left = learn(X[X[split_key] >= split_value],y[X[split_key] >= split_value])
         return branch
 
 
 def predict(x,tree):
-    pass
-
-
-
+    pointer = tree
+    while not isinstance(pointer,Leaf):
+        dec_val = getattr(pointer,'dec_val')
+        dec_key = getattr(pointer,'dec_key')
+        if x[dec_key].iloc[0] < dec_val:
+            pointer = getattr(pointer,'right_branch')
+        else:
+            pointer = getattr(pointer,'left_branch')
+    return getattr(pointer,'val')
 
 #test code
 
@@ -95,3 +101,5 @@ X = df.iloc[:,:-1]
 y = df.iloc[:,-1:]
 
 tree = learn(X,y)
+x = pd.DataFrame({"citric acid":[0.13],"residual sugar":[1.6],"pH":[3.34],"sulphates":[0.59],"alcohol":[9.2]})
+print(predict(x,tree))
