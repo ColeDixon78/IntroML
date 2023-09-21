@@ -142,7 +142,7 @@ class Tree():
         accuracy = ((y_predict == y).value_counts()[True])/len(y)
         recall = (y_predict & y).value_counts()[1]/y.value_counts()[1]
         precision = (y_predict & y).value_counts()[1]/y_predict.value_counts()[1]
-        return pd.DataFrame({'accuracy':[accuracy],'recall':[recall],'precision':[precision]})
+        return pd.DataFrame({'accuracy': [accuracy],'precision':[precision],'recall':recall},index = [self.name])
         
     
 
@@ -163,7 +163,11 @@ model_1 = Tree("model_1: gini index, no pruning")
 model_1.learn(X_training,y_training,impurity_measure = 'gini')
 model_1_training_stats = model_1.get_stats()
 model_1_validation_stats = model_1.get_stats(X_validation,y_validation)
-model_0_training_stats.plot()
+training_stats = pd.concat([model_0_training_stats,model_1_training_stats])
+validation_stats = pd.concat([model_0_validation_stats,model_1_validation_stats])
+plt.plot(training_stats,type = 'bar')
+#plt.plot(validation_stats)
+plt.show()
 #model_2 = Tree()
 #model_2.learn(X_training,y_training,pruning = True)
 #model_3 = Tree()
