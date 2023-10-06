@@ -1,0 +1,112 @@
+---
+title: "Lab 4"
+author: "Cole Dixon"
+date: "2023-10-06"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(ISLR2)
+attach(Smarket)
+```
+```{r}
+dim(Smarket)
+summary(Smarket)
+```
+```{r}
+cor(Smarket[,-9])
+```
+
+```{r}
+plot(Volume)
+```
+
+## logistic regression to predict direction
+
+```{r}
+glm.fit = glm(Direction ~ . - Year - Today, data = Smarket, family = binomial)
+summary(glm.fit)
+```
+```{r}
+glm.probs = predict(glm.fit, type = "response")
+glm.probs[1:10]
+contrasts(Direction)
+```
+```{r}
+glm.pred = rep("Down",1250)
+glm.pred[glm.probs > 0.5] = "Up"
+table(glm.pred,Direction)
+```
+```{r}
+145 / (457+145)
+507 / (507 + 141)
+(145+507)/ 1250
+```
+
+poor results :(
+
+## Linear Discriminant Analysis
+
+```{r}
+library(MASS)
+train = (Year < 2005)
+Smarket.2005 = Smarket[!train,]
+Direction.2005 = Direction[!train]
+```
+
+
+```{r}
+lda.fit = lda(Direction ~ Lag1 + Lag2, data = Smarket, subset = train)
+lda.fit
+```
+
+```{r}
+lda.predict = predict(lda.fit,Smarket.2005)
+table(lda.predict$class,Direction.2005)
+mean(lda.predict$class == Direction.2005)
+```
+Almost the same as logistic
+
+## QDA
+
+```{r}
+qda.fit = qda(Direction ~ Lag1 + Lag2, data = Smarket, subset = train)
+qda.fit
+```
+```{r}
+qda.class = predict(qda.fit, Smarket.2005)$class
+table(qda.class, Direction.2005)
+mean(qda.class == Direction.2005)
+```
+## Naive Bayes
+
+```{r}
+library(e1071)
+nb.fit = naiveBayes(Direction ~ Lag1 + Lag2, data = Smarket, subset = train)
+nb.fit
+```
+```{r}
+nb.predict = predict(nb.fit, Smarket.2005)
+table(nb.predict, Direction.2005)
+mean(nb.predict == Direction.2005)
+```
+
+## Knearest Neighbors
+
+```{r}
+library(class)
+train.X = cbind(Lag1,Lag2)[train,]
+test.X = cbind(Lag1,Lag2)[!train,]
+train.Direction = Direction[train]
+```
+
+```{r}
+knn.pred = knn(train.X,test.X,train.Direction, k = 3)
+table(knn.pred,Direction.2005)
+mean(knn.pred == Direction.2005)
+```
+

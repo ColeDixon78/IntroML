@@ -1,0 +1,31 @@
+---
+title: "4.8 Exercise 14"
+author: "Cole Dixon"
+date: "2023-10-06"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(ISLR2)
+library(MASS)
+attach(Auto)
+head(Auto)
+summary(Auto)
+```
+#### part a
+
+```{r}
+mpg01 = mpg > median(mpg)
+Auto$mpg01 = mpg01
+head(Auto)
+```
+
+#### part b
+```{r}
+plo
+```
+

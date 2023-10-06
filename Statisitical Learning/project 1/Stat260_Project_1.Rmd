@@ -1,0 +1,58 @@
+---
+title: "Stat260 Compulsory Project 1"
+output: html_notebook
+---
+
+##3.7 question 10
+
+####part a
+```{r}
+library(MASS)
+library(ISLR2)
+attach(Carseats)
+lm.fit = lm(Sales ~ Price + Urban + US, data = Carseats)
+summary(lm.fit)
+```
+```{r}
+contrasts(Urban)
+contrasts(US)
+```
+```{r}
+?Carseats
+```
+
+
+####part b
+The coefficient for Price is -0.054459 indicating that for every dollar increase in price, sales decrease by about 0.05 dollars in the model. The coefficient for Urban is -0.021916 indicating that stores in an urban area see a decrease in sales by about 0.021916 in the model. The coefficient for US is 1.200573 indicating that stores in the US have an increase of sales by 1.200573 in the model.
+
+####part c
+
+Sales = 13.043469 + (-0.054459 * Price) + (-0.021916 * Urban) + (1.200573 * US)
+where a Yes value corresponds to 1 and a No value corresponds to 0 for the dummy variables Urban and US
+
+####part d
+
+We can reject this null hypothesis for the Price and US predictors because both yeild sufficeintly low p values. 
+
+####part e
+
+```{r}
+lm.fit1 = update(lm.fit, ~ . -Urban)
+summary(lm.fit1)
+```
+
+####part f
+Both models (a) and (e) have relatively low R squared and andjusted R Squared values indicating that neither model fits the data very well. However, sales of products is a complex thing to model as there are many factors which influence it, so a low R squared value is expected.
+
+####part g
+```{r}
+confint(lm.fit1)
+```
+####part h
+```{r}
+plot(predict(lm.fit1),rstudent(lm.fit1),lwd = 3)
+plot(hatvalues(lm.fit1))
+mean(hatvalues(lm.fit1))
+which.max(hatvalues(lm.fit1))
+```
+There are no values whose studentized residual value exceeds 3 suggesting that there are no outliers in the data. There is evidence of high leverage points like the point at index 43 which has a leverage statistic over 0.04 which is much higher than the average leverage of 0.0075
