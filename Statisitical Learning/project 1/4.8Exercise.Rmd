@@ -26,6 +26,103 @@ head(Auto)
 
 #### part b
 ```{r}
-plo
+par(mfrow = c(2,3))
+plot(mpg01,displacement)
+plot(mpg01,cylinders)
+plot(mpg01,horsepower)
+plot(mpg01,weight)
+plot(mpg01,acceleration)
+plot(mpg01,year)
+boxplot(mpg01,displacement,horizontal = TRUE)
+boxplot(mpg01,cylinders,horizontal = TRUE)
+boxplot(mpg01,horsepower,horizontal = TRUE)
+boxplot(mpg01,weight,horizontal = TRUE)
+boxplot(mpg01,acceleration,horizontal = TRUE)
+boxplot(mpg01,year,horizontal = TRUE)
+```
+Horsepower, weight and acceleration all appear to have a noticeable relationship with high vs low mpg by looking at their scatter plots. This is because in the plots the points are clearly clustered around different values in both classes.
+
+#### part c
+
+split data 70% for validation 30% for training
+```{r}
+set.seed(43)
+train = sample(c(TRUE,FALSE),nrow(Auto),replace = TRUE, prob = c(0.3,0.7))
+Auto.val = Auto[!train,]
+mpg01.val = mpg01[!train]
 ```
 
+
+#### part d
+LDA
+```{r}
+lda.fit = lda(mpg01 ~ weight + horsepower + year, data = Auto, subset = train)
+lda.fit
+lda.predict = predict(lda.fit,Auto.val)$class
+table(lda.predict,mpg01.val)
+1 - mean(lda.predict == mpg01.val)
+```
+The test error for LDA when estimating mpg01 based on weight, cylinders, and year is ~11.787%
+
+#### part e
+QDA
+
+```{r}
+qda.fit = qda(mpg01 ~ weight + horsepower + year, data = Auto, subset = train)
+qda.fit
+qda.predict = predict(qda.fit,Auto.val)$class
+table(qda.predict,mpg01.val)
+1 - mean(qda.predict == mpg01.val)
+```
+
+The test error for QDA is ~10.266%
+
+#### part f
+Logistic Regression
+
+```{r}
+glm.fit = glm(mpg01 ~ weight + horsepower + year, data = Auto, subset = train, family = binomial)
+summary(glm.fit)
+glm.response = predict(glm.fit,Auto.val, type = "response")
+glm.predict = glm.response > 0.5
+table(glm.predict,mpg01.val)
+1 - mean(glm.predict == mpg01.val)
+```
+
+The test error is ~9.886%
+
+#### part g
+
+Noive Bayes
+```{r}
+library(e1071)
+nb.fit = naiveBayes(mpg01 ~ weight + horsepower + year, data = Auto, subset = train)
+nb.fit
+nb.predict = predict(nb.fit, Auto.val)
+table(nb.predict,mpg01.val)
+1 - mean(nb.predict == mpg01.val)
+```
+
+The test error for the Naive bayes classifier is ~10.646%
+
+#### part h
+
+K nearest neighbors
+
+```{r}
+library(class)
+train.X = cbind(weight,horsepower,year)[train,]
+test.X = cbind(weight,horsepower,year)[!train,]
+train.mpg01 = mpg01[train]
+
+knn_test_errors <- list()
+for (k in 1:10){
+  knn.predict = knn(train.X,test.X,train.mpg01, k)
+  #table(knn.predict, mpg01.val)
+  test_error <- 1-mean(knn.predict == mpg01.val)
+  knn_test_errors <- append(knn_test_errors,test_error)
+}
+plot(1:10,knn_test_errors, type = 'l')
+knn_test_errors
+```
+After k=4 the test error rate does not really improve much. The test error rate at k = 4 is ~11.406%
