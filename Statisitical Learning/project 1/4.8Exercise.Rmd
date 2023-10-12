@@ -33,12 +33,12 @@ plot(mpg01,horsepower)
 plot(mpg01,weight)
 plot(mpg01,acceleration)
 plot(mpg01,year)
-boxplot(mpg01,displacement,horizontal = TRUE)
-boxplot(mpg01,cylinders,horizontal = TRUE)
-boxplot(mpg01,horsepower,horizontal = TRUE)
-boxplot(mpg01,weight,horizontal = TRUE)
-boxplot(mpg01,acceleration,horizontal = TRUE)
-boxplot(mpg01,year,horizontal = TRUE)
+boxplot(displacement[mpg01],displacement[!mpg01],horizontal = TRUE)
+boxplot(cylinders[mpg01],cylinders[!mpg01],horizontal = TRUE)
+boxplot(horsepower[mpg01],horsepower[!mpg01],horizontal = TRUE)
+boxplot(weight[mpg01],weight[!mpg01],horizontal = TRUE)
+boxplot(acceleration[mpg01],acceleration[!mpg01],horizontal = TRUE)
+boxplot(year[mpg01],year[!mpg01],horizontal = TRUE)
 ```
 Horsepower, weight and acceleration all appear to have a noticeable relationship with high vs low mpg by looking at their scatter plots. This is because in the plots the points are clearly clustered around different values in both classes.
 

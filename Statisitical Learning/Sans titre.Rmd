@@ -1,0 +1,103 @@
+---
+title: "Lab 6"
+output: html_notebook
+---
+
+```{r}
+library(ISLR2)
+attach(Hitters)
+names(Hitters)
+dim(Hitters)
+Hitters = na.omit(Hitters)
+dim(Hitters)
+```
+```{r}
+library(leaps)
+regfit.full = regsubsets(Salary ~ ., Hitters,nvmax = 19)
+summary(regfit.full)
+```
+```{r}
+par(mfrow = c(2,2))
+reg.summary = summary(regfit.full)
+plot(reg.summary$rss, xlab = "number of variables", ylab = "RSS", type = "l")
+plot(reg.summary$adjr2, xlab = "number of variables",ylab = "adjusted r squared", type = "l")
+max_index = which.max(reg.summary$adjr2)
+points(max_index,reg.summary$adjr2[max_index],col = "red",cex = 2, pch = 20)
+plot(regfit.full,scale = "Cp")
+plot(regfit.full, scale = "bic")
+
+```
+
+```{r}
+regfit.full = regsubsets(Salary ~ .,Hitters,nvmax = 19, method = "backward")
+summary(regfit.full)
+plot(regfit.full,scale = "adjr2")
+plot(summary(regfit.full)$adjr2,xlab = "number of variables", ylab = "adjr2", type = "l")
+which.max(summary(regfit.full)$adjr2)
+```
+
+using validation set and cross validation approaches
+
+```{r}
+set.seed(1)
+train = sample(c(TRUE,FALSE),nrow(Hitters),replace = TRUE)
+test = (!train)
+regfit.best = regsubsets(Salary~.,Hitters[train,],nvmax = 19)
+reg.summary = summary(regfit.best)
+plot(reg.summary$adjr2,type = "l")
+points(which.max(reg.summary$adjr2),req.summary$adjr2[which.max(reg.summary$adjr2)],col = "red", pch = 20)
+
+```
+
+```{r}
+test.mat = model.matrix(Salary ~ ., data = Hitters[test,])
+val.errors = rep(NA,19)
+for(i in 1:19){
+  coefi <- coef(regfit.best, id = i)
+  pred <- test.mat[, names(coefi)] %*% coefi
+  val.errors[i] <- mean((Hitters$Salary[test] - pred)^2)
+}
+val.errors
+which.min(val.errors)
+```
+
+```{r}
+predict.regsubsets <- function (object , newdata , id, ...) {
+  form <- as.formula (object$call[[2]])
+  mat <- model.matrix (form , newdata)
+  coefi <- coef(object , id = id)
+  xvars <- names(coefi)
+  mat[, xvars] %*% coefi
+}
+```
+
+cross validation
+
+```{r}
+k <- 10
+n <- nrow(Hitters)
+set.seed(1)
+folds = sample(rep(1:k,length = n))
+cv.errors <- matrix(NA,k,19,dimnames = list(NULL,paste(1:19)))
+```
+
+```{r}
+for(j in 1:k){
+  reg.best <- regsubsets(Salary ~ ., Hitters[folds != j, ], nvmax = 19)
+  for(i in 1:19){
+    pred = predict(reg.best, Hitters[folds == j, ], id = i)
+    cv.errors[j,i] <- mean((Hitters$Salary[folds == j] - pred)^2)
+  }
+}
+mean.cv.errors <- apply(cv.errors,2,mean)
+mean.cv.errors
+which.min(mean.cv.errors)
+```
+```{r}
+plot(mean.cv.errors,type = "b")
+```
+```{r}
+reg.best <- regsubsets(Salary ~ .,Hitters,nvmax = 19)
+coef(reg.best, 10)
+```
+
