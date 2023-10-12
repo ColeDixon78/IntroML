@@ -1,0 +1,206 @@
+---
+title: "Cole Dixon - Project 1"
+output: html_notebook
+---
+
+• Ozone: Mean ozone in parts per billion from 1300 to 1500 hours at Roosevelt
+Island
+• Solar.R: Solar radiation in Langleys in the frequency band 4000–7700 Angstroms
+from 0800 to 1200 hours at Central Park
+• Wind: Average wind speed in miles per hour at 0700 and 1000 hours atLaGuardia
+Airport
+• Temp: Maximum daily temperature in degrees Fahrenheit at La Guardia Airport.
+• Month
+• Day
+
+
+#### Imports
+```{r}
+library(glmnet)
+attach(airq)
+```
+
+## part 1
+
+```{r}
+nrow(airq) - nrow(na.omit(airq))
+```
+There are 42 rows with NA values, so we will remove these.
+
+```{r}
+airq <- na.omit(airq)
+nrow(airq) - nrow(na.omit(airq))
+nrow(airq)
+```
+
+After removing rows with NA values, there are 111 rows left.
+
+#### Data Preview
+```{r}
+View(airq)
+```
+
+I would consider the day and month variables to be factors instead of numeric values because these are not exactly quantitative variables because they have have limited ranges and can only have whole number values.
+
+```{r}
+Month <- as.factor(Month)
+Day <- as.factor(Day)
+pairs( ~ Ozone + Solar.R + Wind + Temp, data = Auto)
+```
+```{r}
+par(mfrow = c(2,4))
+plot(Month, Ozone, xlab = "Month", ylab = "Ozone")
+plot(Month, Solar.R, xlab = "Month", ylab = "Solar.R")
+plot(Month, Wind, xlab = "Month", ylab = "Wind")
+plot(Month, Temp, xlab = "Month", ylab = "Temp")
+plot(Day,Ozone, xlab = "Day", ylab = "Ozone")
+plot(Day,Solar.R, xlab = "Day", ylab = "Solar.R")
+plot(Day,Wind, xlab = "Day", ylab = "Wind")
+plot(Day,Temp, xlab = "Day", ylab = "Temp")
+```
+After a visual inspection of the data there appears to be several patterns between variables. For example temperature appears to have a relationship with both wind and ozone variables because their respective scatter plots show a general relationship. Looking at the histograms for the day and moth variables, there appears to be an obvious relationship between month and temperature which is to be expected. 
+
+## part 2
+
+```{r}
+cor(airq[,1:4])
+```
+The highest correlations are between temperature and ozone, wind and ozone, and temperature and wind.
+
+## part 3
+
+I am going to use linear regression to try and predict temperature based on other factors. In order to choose my different models, I am going to use backward selection to determine to try and find the best model for 1 up to 5 variables.
+
+```{r}
+library(leaps)
+regfit.full = regsubsets(Temp ~ ., data = airq, nvmax = 5, method = "backward")
+summary(regfit.full)
+```
+This what the best variables to use are if we were to only use 1,2,3,4, or 5 variables. Now to fit the models:
+
+```{r}
+reg.fit1 = lm(Temp ~ Ozone, data = airq)
+reg.fit2 = lm(Temp ~ Ozone + Month, data = airq)
+reg.fit3 = lm(Temp ~ Ozone + Month + Solar.R, data = airq)
+reg.fit4 = lm(Temp ~ Ozone + Month + Solar.R + Day, data = airq)
+reg.fit5 = lm(Temp ~ ., data = airq)
+```
+
+```{r}
+reg.summary1 <- summary(reg.fit1)
+reg.summary2 <- summary(reg.fit2)
+reg.summary3 <- summary(reg.fit3)
+reg.summary4 <- summary(reg.fit4)
+reg.summary5 <- summary(reg.fit5)
+```
+```{r}
+reg.summary1
+reg.summary2
+reg.summary3
+reg.summary4
+reg.summary5
+par(mfrow = c(1,2))
+plot(1:5,c(reg.summary1$r.squared,reg.summary2$r.squared,reg.summary3$r.squared,reg.summary4$r.squared,reg.summary5$r.squared), type = "l", xlab = "model number", ylab = "r squared")
+plot(1:5,c(reg.summary1$adj.r.squared,reg.summary2$adj.r.squared,reg.summary3$adj.r.squared,reg.summary4$adj.r.squared,reg.summary5$adj.r.squared), type = "l", xlab = "model number", ylab = "adjusted r squared")
+
+```
+As is expected, the R squared statistic improved with every added variable, because R squared only considers training error, and a model with more variables will achieve a lower RSS and therefore a higher R squared. The adjusted R squared takes this into account by discouraging the addition of unnecessary noise variables. Adjusted R squared is more appropriate when comparing models with a different number of variables such as in this example. It appears that model 4 therefore provides the best fit to the data based off of adjusted r squared. However, the variables have high p values so may not be significant, and removing them does not dramitcally hurt the adjusted r squared.
+
+## part 4
+
+The two main assumptions with linear regression are the additive assumption and the linearity assumption. In order to get an idea of whether these assumptions are being met it is helpful to look at residual graphs:
+```{r}
+par(mfrow = c(2,2))
+plot(reg.fit1)
+plot(reg.fit2)
+plot(reg.fit3)
+plot(reg.fit4)
+plot(reg.fit5)
+```
+Based off of the graph of residuals vs fitted values, there may be some non-linearity because the smoothed line to the point has a sligh parobolic shape.
+
+
+## part 5
+The first issue that stand out is that data point 77 appears to have unusually high leverage and is also potentially an outlier, so it makes sense to remove it and see how that changes our model.
+
+```{r}
+airq.mod <- airq[-77, ]
+reg.fit2.mod = lm(Temp ~ Ozone + Month, data = airq.mod)
+summary(reg.fit2.mod)
+par(mfrow = c(2,2))
+plot(reg.fit2.mod)
+```
+Removing this high leverage point greatly improves the fit of the model to the data as shown by the increase in adjusted R-squared. The residuals vs fitted graph also has a much more even distribution.
+
+In order to address the additive assumption we can add an interaction term between our two variables. This might help if there is a synergy effect between Ozone and Month.
+
+```{r}
+reg.fit2.mod <- lm(Temp ~ Ozone * Month, data = airq.mod)
+summary(reg.fit2.mod)
+par(mfrow = c(2,2))
+plot(reg.fit2.mod)
+```
+The interaction term actually made the model fit worse, and the term has a very high p value so it is likely not contributing anything to the model.
+
+
+Now we can try to address non-linearity by testing out non-linear transformations on the predictiors. In this case a quadratic transformation looks appropriate.
+
+```{r}
+reg.fit2.mod = lm(Temp ~ Ozone + Month + I(Ozone^2) + I(Month^2), data = airq.mod)
+summary(reg.fit2.mod)
+par(mfrow = c(2,2))
+plot(reg.fit2.mod)
+```
+The quadratic terms appear to have greatly improved the adjusted r squared of the model, and they both have low p values suggesting that they are significant. Also, the residuals vs fitted plot now has a nice even distribution with no clear pattern.
+
+## part 6
+
+Test/train split:
+
+```{r}
+set.seed(1)
+library(glmnet)
+train = sample(c(TRUE,FALSE),nrow(airq.mod),replace = TRUE)
+test = (!train)
+x <- model.matrix(Temp ~ Ozone + Month + I(Ozone^2) + I(Month^2), data = airq.mod[train,])[ ,-1]
+y <- airq.mod$Temp[train]
+x.test <- model.matrix(Temp ~ Ozone + Month + I(Ozone^2) + I(Month^2), data = airq.mod[test,])[ ,-1]
+```
+
+Use cross validation to determine best lambda
+```{r}
+cv.out <- cv.glmnet(x,y, alpha = 0)
+plot(cv.out)
+best.lambda <- cv.out$lambda.min
+best.lambda
+```
+Train ridge model and determine test mse:
+
+```{r}
+ridge.mod <- glmnet(x,y,alpha = 0)
+ridge.predict <- predict(ridge.mod, s = best.lambda, newx = x.test )
+ridge.mse = mean((airq.mod$Temp[test] - ridge.predict)^2)
+ridge.mse
+```
+
+
+## part 7
+
+Use cross validation to determine best lambda:
+
+```{r}
+cv.out <- cv.glmnet(x,y, alpha = 1)
+plot(cv.out)
+best.lambda <- cv.out$lambda.min
+best.lambda
+```
+```{r}
+lasso.mod <- glmnet(x,y,alpha = 1)
+lasso.predict <- predict(lasso.mod, s = best.lambda, newx = x.test)
+lasso.mse = mean((airq.mod$Temp[test] - lasso.predict)^2)
+lasso.mse
+lasso.coefi <- predict(lasso.mod, type = "coefficients", s= best.lambda)
+lasso.coefi[lasso.coefi != 0]
+```
+
+The test mse for the lasso model is 23.07382 and there are no variables with a zero coefficient.
