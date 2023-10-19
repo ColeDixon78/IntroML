@@ -110,6 +110,7 @@ The test error for the Naive bayes classifier is ~10.646%
 K nearest neighbors
 
 ```{r}
+set.seed(1)
 library(class)
 train.X = cbind(weight,horsepower,year)[train,]
 test.X = cbind(weight,horsepower,year)[!train,]
@@ -125,4 +126,4 @@ for (k in 1:10){
 plot(1:10,knn_test_errors, type = 'l')
 knn_test_errors
 ```
-After k=4 the test error rate does not really improve much. The test error rate at k = 4 is ~11.406%
+After k=4 the test error rate does not really improve much. The test error rate at k = 4 is ~11.02%

@@ -1,6 +1,6 @@
 ---
 title: "Cole Dixon - Project 1"
-output: html_notebook
+output: html_document
 ---
 
 • Ozone: Mean ozone in parts per billion from 1300 to 1500 hours at Roosevelt
@@ -16,6 +16,8 @@ Airport
 
 #### Imports
 ```{r}
+library(readr)
+airq <- read_csv("airq.csv")
 library(glmnet)
 attach(airq)
 ```
@@ -36,16 +38,14 @@ nrow(airq)
 After removing rows with NA values, there are 111 rows left.
 
 #### Data Preview
-```{r}
-View(airq)
-```
 
 I would consider the day and month variables to be factors instead of numeric values because these are not exactly quantitative variables because they have have limited ranges and can only have whole number values.
 
 ```{r}
+attach(airq)
 Month <- as.factor(Month)
 Day <- as.factor(Day)
-pairs( ~ Ozone + Solar.R + Wind + Temp, data = Auto)
+pairs( ~ Ozone + Solar.R + Wind + Temp, data = airq)
 ```
 ```{r}
 par(mfrow = c(2,4))
@@ -58,7 +58,7 @@ plot(Day,Solar.R, xlab = "Day", ylab = "Solar.R")
 plot(Day,Wind, xlab = "Day", ylab = "Wind")
 plot(Day,Temp, xlab = "Day", ylab = "Temp")
 ```
-After a visual inspection of the data there appears to be several patterns between variables. For example temperature appears to have a relationship with both wind and ozone variables because their respective scatter plots show a general relationship. Looking at the histograms for the day and moth variables, there appears to be an obvious relationship between month and temperature which is to be expected. 
+After a visual inspection of the data there appears to be several patterns between variables. For example temperature appears to have a relationship with both wind and ozone variables because their respective scatter plots show a general relationship. Looking at the histograms for the day and moth variables, there appears to be an obvious relationship between month and temperature which is to be expected.
 
 ## part 2
 
@@ -203,4 +203,4 @@ lasso.coefi <- predict(lasso.mod, type = "coefficients", s= best.lambda)
 lasso.coefi[lasso.coefi != 0]
 ```
 
-The test mse for the lasso model is 23.07382 and there are no variables with a zero coefficient.
+The test mse for the lasso model is 23.07382 and there are no variables with a zero coefficient. The data does not necessarily lend itself to the lasso model because it was not able to eliminate any of the variables by reducing their coefficients to 0.
